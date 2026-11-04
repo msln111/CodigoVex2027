@@ -54,6 +54,8 @@ void opcontrol() {
             pros::lcd::clear_line(7);
             pros::lcd::set_text(7, "Ejecutando autonomo");
             autonomous();
+            stop_drive();
+            previous_turn_speed = 0.0;
             pros::lcd::clear_line(7);
             pros::lcd::set_text(7, "Autonomo terminado");
         }
