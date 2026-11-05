@@ -1,4 +1,5 @@
 #include "robot.h"
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 
@@ -37,7 +38,7 @@ void opcontrol() {
     constexpr double FORWARD_SENSITIVITY = 2.0;
     constexpr double TURN_SENSITIVITY = 1.5;
     // MODIFICABLE: limita cuánto puede cambiar la velocidad de giro por ciclo.
-    constexpr double MAX_TURN_ACCEL = 50.0;
+    constexpr double MAX_TURN_ACCEL = 40.0;
 
     double previous_turn_speed = 0.0;
     bool previous_B = false;
@@ -64,10 +65,18 @@ void opcontrol() {
         previous_DOWN = current_DOWN;
 
         int forward_raw = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-        int turn_raw = -master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+        int turn_raw = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 
         if (std::abs(forward_raw) < DEADBAND) { forward_raw = 0; }
         if (std::abs(turn_raw) < DEADBAND) { turn_raw = 0; }
+
+        // Si ambos joysticks estan en reposo, frena para que no avance por inercia.
+        if (forward_raw == 0 && turn_raw == 0) {
+            previous_turn_speed = 0.0;
+            stop_drive();
+            pros::delay(20);
+            continue;
+        }
 
         double forward_curved = apply_joystick_curve(forward_raw, FORWARD_SENSITIVITY);
         double turn_curved = apply_joystick_curve(turn_raw, TURN_SENSITIVITY);
@@ -84,6 +93,16 @@ void opcontrol() {
         previous_turn_speed = turn_rpm;
         double left_speed = forward_rpm - turn_rpm;
         double right_speed = forward_rpm + turn_rpm;
+
+        // Si la suma de avance + giro pasa del maximo, reduce ambos lados en proporcion
+        // para conservar el giro mientras avanza (en vez de recortar un solo lado).
+        double max_speed = std::max(std::abs(left_speed), std::abs(right_speed));
+        if (max_speed > MAX_MOTOR_RPM) {
+            double scale = MAX_MOTOR_RPM / max_speed;
+            left_speed *= scale;
+            right_speed *= scale;
+        }
+        
         set_tank_speed(left_speed, right_speed);
         pros::delay(20);
     }
