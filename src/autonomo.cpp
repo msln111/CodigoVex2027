@@ -134,9 +134,9 @@ void driveStraightWithHeadingHold(double targetDistance) {
 
 // MODIFICABLE: cambia las llamadas y los valores aquí para definir la rutina autónoma.
 void autonomous() {
-    reset_odometry(0.0, 0.0, 90.0);
+    reset_odometry(0.0, 0.0, 0.0);
     pros::delay(200);
-    moverAPunto(0.0, 24.0, 90.0);
+    moverAPunto(0.0, 24.0, 0.0);
     pros::delay(500);
     stop_drive();
 }
