@@ -34,6 +34,9 @@ double apply_joystick_curve(double stick_value, double sensitivity_power) {
 void opcontrol() {
     // MODIFICABLE: DEADBAND ignora movimientos pequeños de los joysticks.
     constexpr int DEADBAND = 10;
+    //MODIFICABLE: VELOCIDADES de la subida y la garra
+    constexpr double GarraRPM = 100.0;
+    constexpr double SubidaRPM = 100.0;
     // MODIFICABLE: estas sensibilidades cambian la respuesta de los joysticks.
     constexpr double FORWARD_SENSITIVITY = 2.0;
     constexpr double TURN_SENSITIVITY = 1.5;
@@ -41,6 +44,7 @@ void opcontrol() {
     constexpr double MAX_TURN_ACCEL = 40.0;
 
     double previous_turn_speed = 0.0;
+    bool previous_A = false;
     bool previous_B = false;
     bool previous_DOWN = false;
 
@@ -63,6 +67,32 @@ void opcontrol() {
 
         previous_B = current_B;
         previous_DOWN = current_DOWN;
+
+        //Controlador de la garra
+        bool subirGarra = master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT);
+        bool bajarGarra = master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT);
+        if (subirGarra && !bajarGarra){
+            garraMotor.move_velocity(GarraRPM);
+        }
+        else if (bajarGarra && !subirGarra){
+            garraMotor.move_velocity(-GarraRPM);
+        }
+        else {
+            garraMotor.move_velocity(0);
+        }
+
+        //Subida
+        bool subir = master.get_digital(pros::E_CONTROLLER_DIGITAL_UP);
+        upMotors.move_velocity(subir ? SubidaRPM : 0);
+
+        //Estados del piston
+        bool current_A = master.get_digital(pros::E_CONTROLLER_DIGITAL_A);
+        static bool pistonAbierto = false;
+        if (current_A && !previous_A){
+            pistonAbierto = !pistonAbierto;
+            pistonNeumatico.set_value(pistonAbierto);
+        }
+        previous_A = current_A;
 
         int forward_raw = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
         int turn_raw = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);

@@ -63,6 +63,8 @@ struct RobotState { double x, y, thetaRad, v, omega; };
 extern pros::MotorGroup leftMotors;
 extern pros::MotorGroup rightMotors;
 extern pros::MotorGroup upMotors;
+extern pros::Motor garraMotor;
+extern pros::adi::DigitalOut pistonNeumatico;
 
 // Controlador y sensores.
 extern pros::Controller master;

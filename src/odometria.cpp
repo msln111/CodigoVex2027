@@ -20,6 +20,9 @@ pros::IMU imu(10);
 
 // Motores.
 // MODIFICABLE: cambia los puertos o signos para ajustarlos a la configuración del robot.
+pros::Motor garraMotor(4);
+pros::MotorGroup upMotors({13, 14});
+pros::adi::DigitalOut pistonNeumatico(1);
 pros::MotorGroup leftMotors({-3, 7, 16, -8});
 pros::MotorGroup rightMotors({1, 6, -2, -5});
 pros::Controller master(pros::E_CONTROLLER_MASTER);
