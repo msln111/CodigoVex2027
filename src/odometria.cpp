@@ -20,7 +20,7 @@ pros::IMU imu(10);
 
 // Motores.
 // MODIFICABLE: cambia los puertos o signos para ajustarlos a la configuración del robot.
-pros::MotorGroup leftMotors({-3, 4, -16, 8});
+pros::MotorGroup leftMotors({-3, 7, 16, -8});
 pros::MotorGroup rightMotors({1, 6, -2, -5});
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 
@@ -37,8 +37,8 @@ constexpr double WHEEL_FORWARD_OFFSET = 0.875;
 constexpr double WHEEL_SIDE_OFFSET = 1.875;
 
 // MODIFICABLE: encoder que mide el avance y encoder que mide el lado izquierdo (intercambiar si tu montaje es al revés).
-constexpr pros::Rotation &ENCODER_FORWARD = encodervertical;
-constexpr pros::Rotation &ENCODER_SIDE = encoderhorizontal;
+constexpr pros::Rotation &ENCODER_FORWARD = encoderhorizontal;
+constexpr pros::Rotation &ENCODER_SIDE = encodervertical;
 
 // MODIFICABLE: filtro de las velocidades medidas (0 a 1, más alto responde más rápido pero con más ruido).
 constexpr double ODOM_VEL_ALPHA = 0.3;

@@ -62,6 +62,7 @@ struct RobotState { double x, y, thetaRad, v, omega; };
 // Motores de tracción.
 extern pros::MotorGroup leftMotors;
 extern pros::MotorGroup rightMotors;
+extern pros::MotorGroup upMotors;
 
 // Controlador y sensores.
 extern pros::Controller master;
@@ -77,6 +78,7 @@ void get_position(double &x, double &y, double &theta);
 void get_state(RobotState &state);
 void reset_odometry(double x = 0.0, double y = 0.0, double theta_degrees = 0.0);
 void set_tank_speed(double left_speed, double right_speed);
+void set_up_speed(double up_speed);
 void set_drive_velocity(double v_in_s, double omega_rad_s);
 void stop_drive();
 
