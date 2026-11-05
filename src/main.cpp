@@ -14,6 +14,8 @@ void initialize() {
     pros::lcd::set_text(0, "IMU lista");
     pros::Task odometry_task(tareaOdometria, nullptr, "Tarea de odometria");
     pros::Task display_task(tareaPantalla, nullptr, "Tarea de pantalla");
+    garraMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    garraMotor.tare_position();
 }
 
 void disabled() {
@@ -34,8 +36,16 @@ double apply_joystick_curve(double stick_value, double sensitivity_power) {
 void opcontrol() {
     // MODIFICABLE: DEADBAND ignora movimientos pequeños de los joysticks.
     constexpr int DEADBAND = 10;
-    //MODIFICABLE: VELOCIDADES de la subida y la garra
+    //MODIFICABLE: VELOCIDAD de la garra.
     constexpr double GarraRPM = 100.0;
+    //MODIFICABLE: GRADOS que gira el motor.    
+    constexpr double RelacionGarra = 3.0;
+    //MODIFICABLE: La direccion del giro.
+    constexpr double SentidoGarra = 1.0;
+    //MODIFICABLE: Recorrido de la garra.
+    constexpr double GarraGradosArriba = 90.0;
+    constexpr double GarraGradosAbajo = 350.0;
+    //MODIFICABLE: VELOCIDAD de la subida
     constexpr double SubidaRPM = 100.0;
     // MODIFICABLE: estas sensibilidades cambian la respuesta de los joysticks.
     constexpr double FORWARD_SENSITIVITY = 2.0;
@@ -47,6 +57,9 @@ void opcontrol() {
     bool previous_A = false;
     bool previous_B = false;
     bool previous_DOWN = false;
+    int PosicionGarra = 1;
+    bool anteriorDerecha = false;
+    bool anteriorIzquierda = false;
 
     while (true) {
         // Pulsa B + ABAJO a la vez para activar la rutina autónoma.
@@ -69,17 +82,20 @@ void opcontrol() {
         previous_DOWN = current_DOWN;
 
         //Controlador de la garra
-        bool subirGarra = master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT);
-        bool bajarGarra = master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT);
-        if (subirGarra && !bajarGarra){
-            garraMotor.move_velocity(GarraRPM);
+        bool GarraMas = master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT);
+        bool GarraMenos = master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT);
+        if (GarraMas && !anteriorDerecha && !GarraMenos && PosicionGarra > 0){
+            PosicionGarra--;
         }
-        else if (bajarGarra && !subirGarra){
-            garraMotor.move_velocity(-GarraRPM);
+        if (GarraMenos && !anteriorIzquierda && !GarraMas && PosicionGarra < 2){
+            PosicionGarra++;
         }
-        else {
-            garraMotor.move_velocity(0);
+        double garra_objetivo = PosicionGarra == 0 ? GarraGradosArriba * RelacionGarra * SentidoGarra : (PosicionGarra == 2 ? -GarraGradosAbajo * RelacionGarra * SentidoGarra : 0.0);
+        if ((GarraMas && !anteriorDerecha && !GarraMenos && PosicionGarra < 2) || (GarraMenos && !anteriorIzquierda && !GarraMas && PosicionGarra > 0)){
+            garraMotor.move_absolute(garra_objetivo, GarraRPM);
         }
+        anteriorDerecha = GarraMas;
+        anteriorIzquierda = GarraMenos;
 
         //Subida
         bool subir = master.get_digital(pros::E_CONTROLLER_DIGITAL_UP);
