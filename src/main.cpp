@@ -14,6 +14,8 @@ void initialize() {
     pros::lcd::set_text(0, "IMU lista");
     pros::Task odometry_task(tareaOdometria, nullptr, "Tarea de odometria");
     pros::Task display_task(tareaPantalla, nullptr, "Tarea de pantalla");
+    leftMotors.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    rightMotors.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
     garraMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
     garraMotor.tare_position();
 }
@@ -34,35 +36,36 @@ double apply_joystick_curve(double stick_value, double sensitivity_power) {
 }
 
 void opcontrol() {
-    // MODIFICABLE: DEADBAND ignora movimientos pequeños de los joysticks.
+    // valor variable: DEADBAND ignora movimientos pequeños de los joysticks
     constexpr int DEADBAND = 10;
-    //MODIFICABLE: VELOCIDAD de la garra.
+    // valor variable: VELOCIDAD de la garra
     constexpr double GarraRPM = 100.0;
-    //MODIFICABLE: GRADOS que gira el motor.    
+    // valor variable: GRADOS que gira el motor.   
     constexpr double RelacionGarra = 3.0;
-    //MODIFICABLE: La direccion del giro.
-    constexpr double SentidoGarra = 1.0;
-    //MODIFICABLE: Recorrido de la garra.
+    // valor variable: La direccion del giro
+    constexpr double SentidoGarra = -1.0;
+    // valor variable: Recorrido de la garra
     constexpr double GarraGradosArriba = 90.0;
     constexpr double GarraGradosAbajo = 350.0;
-    //MODIFICABLE: VELOCIDAD de la subida
+    // valor variable: VELOCIDAD de la subida
     constexpr double SubidaRPM = 100.0;
-    // MODIFICABLE: estas sensibilidades cambian la respuesta de los joysticks.
+    // valor variable: VELOCIDAD del intake
+    constexpr double IntakeRPM = 100.0;
+    // valor variable: estas sensibilidades cambian la respuesta de los joysticks
     constexpr double FORWARD_SENSITIVITY = 2.0;
     constexpr double TURN_SENSITIVITY = 1.5;
-    // MODIFICABLE: limita cuánto puede cambiar la velocidad de giro por ciclo.
-    constexpr double MAX_TURN_ACCEL = 40.0;
 
-    double previous_turn_speed = 0.0;
     bool previous_A = false;
     bool previous_B = false;
     bool previous_DOWN = false;
     int PosicionGarra = 1;
     bool anteriorDerecha = false;
     bool anteriorIzquierda = false;
+    bool subidaEncendida = false;
+    bool intakeEncendido = false;
 
     while (true) {
-        // Pulsa B + ABAJO a la vez para activar la rutina autónoma.
+        // pulsa B + ABAJO a la vez para activar la rutina autonoma
         bool current_B = master.get_digital(pros::E_CONTROLLER_DIGITAL_B);
         bool current_DOWN = master.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN);
         bool both_pressed = current_B && current_DOWN;
@@ -73,7 +76,6 @@ void opcontrol() {
             pros::lcd::set_text(7, "Ejecutando autonomo");
             autonomous();
             stop_drive();
-            previous_turn_speed = 0.0;
             pros::lcd::clear_line(7);
             pros::lcd::set_text(7, "Autonomo terminado");
         }
@@ -81,7 +83,7 @@ void opcontrol() {
         previous_B = current_B;
         previous_DOWN = current_DOWN;
 
-        //Controlador de la garra
+        // controlador de la garra
         bool GarraMas = master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT);
         bool GarraMenos = master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT);
         if (GarraMas && !anteriorDerecha && !GarraMenos && PosicionGarra > 0){
@@ -97,11 +99,35 @@ void opcontrol() {
         anteriorDerecha = GarraMas;
         anteriorIzquierda = GarraMenos;
 
-        //Subida
-        bool subir = master.get_digital(pros::E_CONTROLLER_DIGITAL_UP);
-        upMotors.move_velocity(subir ? SubidaRPM : 0);
+        // subida
+        if (master.get_digital(pros::E_CONTROLLER_DIGITAL_UP)){
+            subidaEncendida = !subidaEncendida;
+            if (subidaEncendida = true){
+                upMotors.move_velocity(SubidaRPM);
+            }
+            else {
+                upMotors.move_velocity(0);
+            }
+            while (master.get_digital(pros::E_CONTROLLER_DIGITAL_UP)){
+                pros::delay(20);
+            }
+        }
 
-        //Estados del piston
+        // intake
+         if (master.get_digital(pros::E_CONTROLLER_DIGITAL_X)){
+            intakeEncendido = !intakeEncendido;
+            if (intakeEncendido = true){
+                upMotors.move_velocity(IntakeRPM);
+            }
+            else {
+                upMotors.move_velocity(0);
+            }
+            while (master.get_digital(pros::E_CONTROLLER_DIGITAL_X)){
+                pros::delay(20);
+            }
+        }
+
+        // estados del piston
         bool current_A = master.get_digital(pros::E_CONTROLLER_DIGITAL_A);
         static bool pistonAbierto = false;
         if (current_A && !previous_A){
@@ -113,12 +139,15 @@ void opcontrol() {
         int forward_raw = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
         int turn_raw = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 
-        if (std::abs(forward_raw) < DEADBAND) { forward_raw = 0; }
-        if (std::abs(turn_raw) < DEADBAND) { turn_raw = 0; }
+        if (std::abs(forward_raw) < DEADBAND) { 
+            forward_raw = 0; 
+        }
+        if (std::abs(turn_raw) < DEADBAND) { 
+            turn_raw = 0; 
+        }
 
-        // Si ambos joysticks estan en reposo, frena para que no avance por inercia.
+        // si ambos joysticks estan en reposo, frena para que no avance por inercia.
         if (forward_raw == 0 && turn_raw == 0) {
-            previous_turn_speed = 0.0;
             stop_drive();
             pros::delay(20);
             continue;
@@ -128,20 +157,11 @@ void opcontrol() {
         double turn_curved = apply_joystick_curve(turn_raw, TURN_SENSITIVITY);
         double forward_rpm = forward_curved * (MAX_MOTOR_RPM / 127.0);
         double turn_rpm = turn_curved * (MAX_TURN_RPM / 127.0);
-        double turn_delta = turn_rpm - previous_turn_speed;
-
-        if (turn_delta > MAX_TURN_ACCEL) {
-            turn_rpm = previous_turn_speed + MAX_TURN_ACCEL;
-        } else if (turn_delta < -MAX_TURN_ACCEL) {
-            turn_rpm = previous_turn_speed - MAX_TURN_ACCEL;
-        }
-
-        previous_turn_speed = turn_rpm;
         double left_speed = forward_rpm - turn_rpm;
         double right_speed = forward_rpm + turn_rpm;
 
-        // Si la suma de avance + giro pasa del maximo, reduce ambos lados en proporcion
-        // para conservar el giro mientras avanza (en vez de recortar un solo lado).
+        // si la suma de avance + giro pasa del maximo, reduce ambos lados en proporcion 
+        // para conservar el giro mientras avanza (en vez de recortar un solo lado)
         double max_speed = std::max(std::abs(left_speed), std::abs(right_speed));
         if (max_speed > MAX_MOTOR_RPM) {
             double scale = MAX_MOTOR_RPM / max_speed;

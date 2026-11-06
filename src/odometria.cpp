@@ -2,58 +2,55 @@
 #include <cmath>
 #include <string>
 
-// Posición global del robot.
+// posicion global del robot
 double globalX = 0.0;
 double globalY = 0.0;
 double globalTheta = 0.0;
 
-// Velocidades filtradas del robot (avance en in/s y giro en rad/s).
+// velocidades filtradas del robot (avance en in/s y giro en rad/s)
 double globalV = 0.0;
 double globalOmega = 0.0;
 pros::Mutex odometry_mutex;
 
-// Sensores.
-// MODIFICABLE: cambia estos puertos si conectas los encoders o el IMU a otros puertos.
+// sensores
 pros::Rotation encoderhorizontal(11);
 pros::Rotation encodervertical(-12);
 pros::IMU imu(10);
 
-// Motores.
-// MODIFICABLE: cambia los puertos o signos para ajustarlos a la configuración del robot.
+// motores
 pros::Motor garraMotor(4);
 pros::MotorGroup upMotors({13, 14});
+pros::MotorGroup cadenaMotors({15, 17});
 pros::adi::DigitalOut pistonNeumatico(1);
 pros::MotorGroup leftMotors({-3, 7, 16, -8});
 pros::MotorGroup rightMotors({1, 6, -2, -5});
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 
-// Calibración de las ruedas de seguimiento.
-// MODIFICABLE: ajusta el diámetro si las ruedas de los encoders tienen otro tamaño.
+// valor variable: ajusta el diametro si las ruedas de los encoders tienen otro tamaño
 constexpr double TRACKING_WHEEL_DIAMETER = 2.0;
 constexpr double CENTIDEGREES_PER_REVOLUTION = 36000.0;
 constexpr double TRACKING_WHEEL_CIRCUMFERENCE = M_PI * TRACKING_WHEEL_DIAMETER;
 constexpr double INCHES_PER_CENTIDEGREE = TRACKING_WHEEL_CIRCUMFERENCE / CENTIDEGREES_PER_REVOLUTION;
 
-// Ubicación de las ruedas de seguimiento respecto al centro de gravedad.
-// MODIFICABLE: estos desplazamientos corrigen el movimiento medido durante los giros.
+// valor variable: ubicacion de las ruedas de seguimiento respecto al centro de gravedad
 constexpr double WHEEL_FORWARD_OFFSET = 0.875;
 constexpr double WHEEL_SIDE_OFFSET = 1.875;
 
-// MODIFICABLE: encoder que mide el avance y encoder que mide el lado izquierdo (intercambiar si tu montaje es al revés).
+// valor variable: encoder que mide el avance y encoder que mide el lado izquierdo (intercambiar si tu montaje es al reves)
 constexpr pros::Rotation &ENCODER_FORWARD = encoderhorizontal;
 constexpr pros::Rotation &ENCODER_SIDE = encodervertical;
 
-// MODIFICABLE: filtro de las velocidades medidas (0 a 1, más alto responde más rápido pero con más ruido).
+// valor variable: filtro de las velocidades medidas (0 a 1, mas alto responde mas rapido pero con mas ruido)
 constexpr double ODOM_VEL_ALPHA = 0.3;
 
-// Lecturas anteriores de los sensores, del tiempo y offset del rumbo.
+// lecturas anteriores de los sensores, del tiempo y offset del rumbo
 static double previousForwardRaw = 0.0;
 static double previousSideRaw = 0.0;
 static double previousThetaDeg = 0.0;
 static double headingOffsetDeg = 0.0;
 static uint32_t previousTimeMs = 0;
 
-// Rumbo del IMU en grados antihorarios continuos, con el offset del último reset.
+// rumbo del IMU en grados antihorarios continuos, con el offset del ultimo reset
 static double read_theta_deg() { return -imu.get_rotation() + headingOffsetDeg; }
 
 double clamp_speed(double value, double minimum, double maximum) {
@@ -76,7 +73,7 @@ void get_position(double &x, double &y, double &theta) {
     odometry_mutex.give();
 }
 
-// Estado completo del robot (posición, rumbo y velocidades) leído de forma segura.
+// estado completo del robot (posicion, rumbo y velocidades) leido de forma segura
 void get_state(RobotState &state) {
     odometry_mutex.take();
     state.x = globalX;
@@ -87,7 +84,7 @@ void get_state(RobotState &state) {
     odometry_mutex.give();
 }
 
-// Reinicia posición, rumbo y velocidades; todo bajo el mutex para no chocar con la tarea de odometría.
+// reinicia posicion, rumbo y velocidades; todo bajo el mutex para no chocar con la tarea de odometria
 void reset_odometry(double x, double y, double theta_degrees) {
     odometry_mutex.take();
     headingOffsetDeg = theta_degrees + imu.get_rotation();
@@ -118,7 +115,7 @@ void set_tank_speed(double left_speed, double right_speed) {
     rightMotors.move_velocity(right_speed);
 }
 
-// Convierte avance (in/s) y giro antihorario (rad/s) en RPM de cada lado y los manda a los motores.
+// convierte avance (in/s) y giro antihorario (rad/s) en RPM de cada lado y los manda a los motores
 void set_drive_velocity(double v_in_s, double omega_rad_s) {
     double half_track = TRACK_WIDTH * 0.5;
     double left_rpm = (v_in_s - (omega_rad_s * half_track)) / IN_PER_S_PER_RPM;
@@ -127,11 +124,11 @@ void set_drive_velocity(double v_in_s, double omega_rad_s) {
 }
 
 void stop_drive() {
-    leftMotors.move_voltage(0);
-    rightMotors.move_voltage(0);
+    leftMotors.move_velocity(0);
+    rightMotors.move_velocity(0);
 }
 
-// Tarea de actualización de odometría.
+// tarea de actualizacion de odometria
 void tareaOdometria(void *param) {
     (void)param;
 
@@ -146,15 +143,15 @@ void tareaOdometria(void *param) {
         if (dt > 0.0 && std::isfinite(thetaDeg)) {
             double dThetaDeg = normalize_angle_degrees(thetaDeg - previousThetaDeg);
             double dThetaRad = dThetaDeg * M_PI / 180.0;
-            // Cada encoder se corrige por su distancia al centro, igual que antes.
+            // cada encoder se corrige por su distancia al centro, igual que antes
             double dForward = ((forwardRaw - previousForwardRaw) * INCHES_PER_CENTIDEGREE) - (WHEEL_SIDE_OFFSET * dThetaRad);
             double dLeft = ((sideRaw - previousSideRaw) * INCHES_PER_CENTIDEGREE) - (WHEEL_FORWARD_OFFSET * dThetaRad);
-            // Se rota con el rumbo medio del intervalo para aproximar el arco.
+            // se rota con el rumbo medio del intervalo para aproximar el arco
             double midRad = (previousThetaDeg + (0.5 * dThetaDeg)) * M_PI / 180.0;
             globalX += (dForward * std::cos(midRad)) - (dLeft * std::sin(midRad));
             globalY += (dForward * std::sin(midRad)) + (dLeft * std::cos(midRad));
             globalTheta = normalize_angle_degrees(thetaDeg);
-            // Velocidades filtradas que usa el MPC.
+            // velocidades filtradas que usa el MPC
             globalV = ((1.0 - ODOM_VEL_ALPHA) * globalV) + (ODOM_VEL_ALPHA * (dForward / dt));
             globalOmega = ((1.0 - ODOM_VEL_ALPHA) * globalOmega) + (ODOM_VEL_ALPHA * (dThetaRad / dt));
             previousForwardRaw = forwardRaw;
@@ -168,7 +165,7 @@ void tareaOdometria(void *param) {
     }
 }
 
-// Tarea de visualización de la posición en la pantalla.
+// tarea de visualizacion de la posicion en la pantalla
 void tareaPantalla(void *param) {
     (void)param;
 
