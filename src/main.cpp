@@ -53,7 +53,7 @@ void opcontrol() {
     constexpr double IntakeRPM = 100.0;
     // valor variable: estas sensibilidades cambian la respuesta de los joysticks
     constexpr double FORWARD_SENSITIVITY = 2.0;
-    constexpr double TURN_SENSITIVITY = 1.5;
+    constexpr double TURN_SENSITIVITY = 1.0;
 
     bool previous_A = false;
     bool previous_B = false;
@@ -63,6 +63,8 @@ void opcontrol() {
     bool anteriorIzquierda = false;
     bool subidaEncendida = false;
     bool intakeEncendido = false;
+    bool previous_UP = false;
+    bool previous_X = false;
 
     while (true) {
         // pulsa B + ABAJO a la vez para activar la rutina autonoma
@@ -100,32 +102,20 @@ void opcontrol() {
         anteriorIzquierda = GarraMenos;
 
         // subida
-        if (master.get_digital(pros::E_CONTROLLER_DIGITAL_UP)){
+        bool current_UP = master.get_digital(pros::E_CONTROLLER_DIGITAL_UP);
+        if (current_UP && !previous_UP){
             subidaEncendida = !subidaEncendida;
-            if (subidaEncendida = true){
-                upMotors.move_velocity(SubidaRPM);
+                upMotors.move_velocity(subidaEncendida ? SubidaRPM : 0);
             }
-            else {
-                upMotors.move_velocity(0);
-            }
-            while (master.get_digital(pros::E_CONTROLLER_DIGITAL_UP)){
-                pros::delay(20);
-            }
-        }
-
+            previous_UP = current_UP;
+    
         // intake
-         if (master.get_digital(pros::E_CONTROLLER_DIGITAL_X)){
+        bool current_X = master.get_digital(pros::E_CONTROLLER_DIGITAL_X);
+         if (current_X && !previous_X){
             intakeEncendido = !intakeEncendido;
-            if (intakeEncendido = true){
-                upMotors.move_velocity(IntakeRPM);
+            cadenaMotors.move_velocity(intakeEncendido ? IntakeRPM : 0);
             }
-            else {
-                upMotors.move_velocity(0);
-            }
-            while (master.get_digital(pros::E_CONTROLLER_DIGITAL_X)){
-                pros::delay(20);
-            }
-        }
+        previous_X = current_X;
 
         // estados del piston
         bool current_A = master.get_digital(pros::E_CONTROLLER_DIGITAL_A);
@@ -156,17 +146,17 @@ void opcontrol() {
         double forward_curved = apply_joystick_curve(forward_raw, FORWARD_SENSITIVITY);
         double turn_curved = apply_joystick_curve(turn_raw, TURN_SENSITIVITY);
         double forward_rpm = forward_curved * (MAX_MOTOR_RPM / 127.0);
-        double turn_rpm = turn_curved * (MAX_TURN_RPM / 127.0);
+        double turn_rpm = clamp_speed(turn_curved * (MAX_TURN_RPM / 127.0), -MAX_MOTOR_RPM, MAX_MOTOR_RPM);
         double left_speed = forward_rpm - turn_rpm;
         double right_speed = forward_rpm + turn_rpm;
 
         // si la suma de avance + giro pasa del maximo, reduce ambos lados en proporcion 
         // para conservar el giro mientras avanza (en vez de recortar un solo lado)
         double max_speed = std::max(std::abs(left_speed), std::abs(right_speed));
-        if (max_speed > MAX_MOTOR_RPM) {
-            double scale = MAX_MOTOR_RPM / max_speed;
-            left_speed *= scale;
-            right_speed *= scale;
+        if (max_speed > MAX_MOTOR_RPM && forward_rpm != 0.0) {
+            double exceso = (max_speed - MAX_MOTOR_RPM) * (forward_rpm > 0.0 ? 1.0 : -1.0);
+            left_speed -= exceso;
+            right_speed -= exceso;
         }
         
         set_tank_speed(left_speed, right_speed);

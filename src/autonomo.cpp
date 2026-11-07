@@ -137,7 +137,7 @@ void driveStraightWithHeadingHold(double targetDistance) {
 void autonomous() {
     reset_odometry(0.0, 0.0, 0.0);
     pros::delay(200);
-    moverAPunto(0.0, 24.0, 0.0);
+    moverAPunto(24.0, 0.0, 0.0);
     pros::delay(200);
     stop_drive();
 }

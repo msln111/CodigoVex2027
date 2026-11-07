@@ -14,13 +14,13 @@ pros::Mutex odometry_mutex;
 
 // sensores
 pros::Rotation encoderhorizontal(9);
-pros::Rotation encodervertical(-10);
+pros::Rotation encodervertical(10);
 pros::IMU imu(15);
 
 // motores
 pros::Motor garraMotor(4);
 pros::MotorGroup upMotors({1, 2});
-pros::MotorGroup cadenaMotors({8, 7});
+pros::MotorGroup cadenaMotors({8, -7});
 pros::adi::DigitalOut pistonNeumatico(1);
 pros::MotorGroup leftMotors({-14, 13, -12, 11});
 pros::MotorGroup rightMotors({19, -18, 17, -16});
@@ -42,6 +42,8 @@ constexpr pros::Rotation &ENCODER_SIDE = encodervertical;
 
 // valor variable: filtro de las velocidades medidas (0 a 1, mas alto responde mas rapido pero con mas ruido)
 constexpr double ODOM_VEL_ALPHA = 0.3;
+//valor variable: sentido de los motores en el autonomo
+constexpr double DRIVE_POLARITY = -1.0;
 
 // lecturas anteriores de los sensores, del tiempo y offset del rumbo
 static double previousForwardRaw = 0.0;
@@ -118,8 +120,8 @@ void set_tank_speed(double left_speed, double right_speed) {
 // convierte avance (in/s) y giro antihorario (rad/s) en RPM de cada lado y los manda a los motores
 void set_drive_velocity(double v_in_s, double omega_rad_s) {
     double half_track = TRACK_WIDTH * 0.5;
-    double left_rpm = (v_in_s - (omega_rad_s * half_track)) / IN_PER_S_PER_RPM;
-    double right_rpm = (v_in_s + (omega_rad_s * half_track)) / IN_PER_S_PER_RPM;
+    double left_rpm = DRIVE_POLARITY * (v_in_s - (omega_rad_s * half_track)) / IN_PER_S_PER_RPM;
+    double right_rpm = DRIVE_POLARITY * (v_in_s + (omega_rad_s * half_track)) / IN_PER_S_PER_RPM;
     set_tank_speed(left_rpm, right_rpm);
 }
 
