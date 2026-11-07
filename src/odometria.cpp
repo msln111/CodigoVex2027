@@ -13,17 +13,17 @@ double globalOmega = 0.0;
 pros::Mutex odometry_mutex;
 
 // sensores
-pros::Rotation encoderhorizontal(11);
-pros::Rotation encodervertical(-12);
-pros::IMU imu(10);
+pros::Rotation encoderhorizontal(9);
+pros::Rotation encodervertical(-10);
+pros::IMU imu(15);
 
 // motores
 pros::Motor garraMotor(4);
-pros::MotorGroup upMotors({13, 14});
-pros::MotorGroup cadenaMotors({15, 17});
+pros::MotorGroup upMotors({1, 2});
+pros::MotorGroup cadenaMotors({8, 7});
 pros::adi::DigitalOut pistonNeumatico(1);
-pros::MotorGroup leftMotors({-3, 7, 16, -8});
-pros::MotorGroup rightMotors({1, 6, -2, -5});
+pros::MotorGroup leftMotors({-14, 13, -12, 11});
+pros::MotorGroup rightMotors({19, -18, 17, -16});
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 
 // valor variable: ajusta el diametro si las ruedas de los encoders tienen otro tamaño

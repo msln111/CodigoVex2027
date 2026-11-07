@@ -136,7 +136,7 @@ void opcontrol() {
         }
         previous_A = current_A;
 
-        int forward_raw = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+        int forward_raw = -master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
         int turn_raw = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 
         if (std::abs(forward_raw) < DEADBAND) { 
