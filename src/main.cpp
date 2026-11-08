@@ -54,6 +54,8 @@ void opcontrol() {
     // valor variable: estas sensibilidades cambian la respuesta de los joysticks
     constexpr double FORWARD_SENSITIVITY = 2.0;
     constexpr double TURN_SENSITIVITY = 1.0;
+    // valor variable: diametro del giro del giro a maxima velocidad (entre menos mas abierto)
+    constexpr double TURN_RPM_AT_FULL_SPEED = 120.0;
 
     bool previous_A = false;
     bool previous_B = false;
@@ -146,7 +148,10 @@ void opcontrol() {
         double forward_curved = apply_joystick_curve(forward_raw, FORWARD_SENSITIVITY);
         double turn_curved = apply_joystick_curve(turn_raw, TURN_SENSITIVITY);
         double forward_rpm = forward_curved * (MAX_MOTOR_RPM / 127.0);
-        double turn_rpm = clamp_speed(turn_curved * (MAX_TURN_RPM / 127.0), -MAX_MOTOR_RPM, MAX_MOTOR_RPM);
+       // curva de velocidad
+        double speed_fraction = std::abs(forward_rpm) / MAX_MOTOR_RPM;
+        double turn_limit_rpm = MAX_TURN_RPM - ((MAX_TURN_RPM - TURN_RPM_AT_FULL_SPEED) * speed_fraction);
+        double turn_rpm = clamp_speed(turn_curved * (turn_limit_rpm / 127.0), -MAX_MOTOR_RPM, MAX_MOTOR_RPM);
         double left_speed = forward_rpm - turn_rpm;
         double right_speed = forward_rpm + turn_rpm;
 

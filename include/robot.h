@@ -84,6 +84,7 @@ void set_tank_speed(double left_speed, double right_speed);
 void set_up_speed(double up_speed);
 void set_drive_velocity(double v_in_s, double omega_rad_s);
 void stop_drive();
+void set_drive_rpm(double forward_rpm, double turn_rpm);
 
 // tareas de fondo
 void tareaOdometria(void *param);
@@ -92,5 +93,6 @@ void tareaPantalla(void *param);
 // funciones autonomas
 void girarAngulo(double objetivoTheta);
 void moverAPunto(double objetivoX, double objetivoY, double objetivoTheta);
+void avanzar(double distancia);
 
 #endif
