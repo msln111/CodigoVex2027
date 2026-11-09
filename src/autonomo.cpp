@@ -133,7 +133,7 @@ void moverAPunto(double objetivoX, double objetivoY, double objetivoTheta){
 
 void autonomous(){
     reset_odometry(0.0, 0.0, 0.0);
-   avanzar (-63.0, 0);
+   avanzar (63.0, 0);
    pros::delay(200);
    stop_drive();
 }
