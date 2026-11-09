@@ -19,8 +19,8 @@ pros::IMU imu(15);
 
 // motores
 pros::Motor garraMotor(4);
-pros::MotorGroup upMotors({1, 2});
-pros::MotorGroup cadenaMotors({8, -7});
+pros::MotorGroup upMotors({1, -2});
+pros::MotorGroup cadenaMotors({8, 7});
 pros::adi::DigitalOut pistonNeumatico(1);
 pros::MotorGroup leftMotors({-14, 13, 12, -11}, pros::v5::MotorGears::blue);
 pros::MotorGroup rightMotors({-19, -18, 17, 16}, pros::v5::MotorGears::blue);

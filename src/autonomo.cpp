@@ -4,7 +4,7 @@
 
 // valor variable: velocidad maxima y minima
 constexpr double AUTO_MAX_RPM = 200.0;
-constexpr double AUTO_MIN_RPM = 30.0;
+constexpr double AUTO_MIN_RPM = 100.0;
 constexpr double KP_DISTANCE = 12.0;
 constexpr double KP_HEADING = 4.0;
 constexpr double HEADING_CORRECTION_LIMIT = 100.0;
@@ -17,7 +17,7 @@ constexpr int JOYSTICK_ABORT = 60;
 constexpr double KP_TURN = 3.0;
 constexpr double KD_TURN = 0.08;
 constexpr double TURN_MAX_RPM = 150.0;
-constexpr double TURN_MIN_RPM = 20.0;
+constexpr double TURN_MIN_RPM = 100.0;
 constexpr double TURN_TOLERANCE = 1.5;
 constexpr uint32_t TURN_TIMEOUT_MS = 3000;
 // valor variable: si el rumbo pedido difiere mas de estos grados, avanzar() gira primero

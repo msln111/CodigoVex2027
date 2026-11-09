@@ -43,12 +43,12 @@ void opcontrol() {
     // valor variable: GRADOS que gira el motor.   
     constexpr double RelacionGarra = 3.0;
     // valor variable: La direccion del giro
-    constexpr double SentidoGarra = -1.0;
+    constexpr double SentidoGarra = 1.0;
     // valor variable: Recorrido de la garra
     constexpr double GarraGradosArriba = 90.0;
     constexpr double GarraGradosAbajo = 350.0;
     // valor variable: VELOCIDAD de la subida
-    constexpr double SubidaRPM = 100.0;
+    constexpr double SubidaRPM = 200.0;
     // valor variable: VELOCIDAD del intake
     constexpr double IntakeRPM = 200.0;
     // valor variable: estas sensibilidades cambian la respuesta de los joysticks
@@ -60,12 +60,13 @@ void opcontrol() {
     bool previous_A = false;
     bool previous_B = false;
     bool previous_DOWN = false;
-    int PosicionGarra = 1;
+    int PosicionGarra = 0;
     bool anteriorDerecha = false;
     bool anteriorIzquierda = false;
     bool subidaEncendida = false;
     bool intakeEncendido = false;
-    bool previous_UP = false;
+    bool previous_R1 = false;
+    bool previous_L1 = false;
     bool previous_X = false;
 
     while (true) {
@@ -104,13 +105,20 @@ void opcontrol() {
         anteriorIzquierda = GarraMenos;
 
         // subida
-        bool current_UP = master.get_digital(pros::E_CONTROLLER_DIGITAL_UP);
-        if (current_UP && !previous_UP){
+        bool current_R1 = master.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
+        if (current_R1 && !previous_R1){
             subidaEncendida = !subidaEncendida;
                 upMotors.move_velocity(subidaEncendida ? SubidaRPM : 0);
             }
-            previous_UP = current_UP;
-    
+            previous_R1 = current_R1;
+
+     bool current_L1 = master.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
+        if (current_L1 && !previous_L1){
+            subidaEncendida = !subidaEncendida;
+                upMotors.move_velocity(subidaEncendida ? -SubidaRPM : 0);
+            }
+            previous_L1 = current_L1;
+
         // intake
         bool current_X = master.get_digital(pros::E_CONTROLLER_DIGITAL_X);
          if (current_X && !previous_X){
