@@ -21,7 +21,7 @@ pros::IMU imu(15);
 pros::Motor garraMotor(4);
 pros::MotorGroup upMotors({1, -2});
 pros::MotorGroup cadenaMotors({8, 7});
-pros::adi::DigitalOut pistonNeumatico(1);
+pros::adi::DigitalOut pistonNeumatico(1, true);
 pros::MotorGroup leftMotors({-14, 13, 12, -11}, pros::v5::MotorGears::blue);
 pros::MotorGroup rightMotors({-19, -18, 17, 16}, pros::v5::MotorGears::blue);
 pros::Controller master(pros::E_CONTROLLER_MASTER);
@@ -32,11 +32,11 @@ constexpr double CENTIDEGREES_PER_REVOLUTION = 36000.0;
 constexpr double INCHES_PER_CENTIDEGREE = (M_PI * TRACKING_WHEEL_DIAMETER) / CENTIDEGREES_PER_REVOLUTION;
 
 // valor variable: encoder de avance
-constexpr pros::Rotation &ENCODER_FORWARD = encodervertical;
-constexpr pros::Rotation &ENCODER_SIDE = encoderhorizontal;
+constexpr pros::Rotation &ENCODER_FORWARD = encoderhorizontal;
+constexpr pros::Rotation &ENCODER_SIDE = encodervertical;
 // valor variable: sentido del encoder
 constexpr double FORWARD_SIGN = 1.0;
-constexpr double SIDE_SIGN = 1.0;
+constexpr double SIDE_SIGN = -1.0;
 // valor variables: offset de los encoders
 constexpr double SIDE_OFFSET_IN = 0.0;
 constexpr double FORWARD_OFFSET_IN = 0.0;

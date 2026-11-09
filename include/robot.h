@@ -6,8 +6,8 @@
 #include <cstdint>
 
 // valor variable: limites maximos de velocidad del motor y de giro, en RPM
-constexpr double MAX_MOTOR_RPM = 600.0;
-constexpr double MAX_TURN_RPM = 300.0;
+constexpr double MAX_MOTOR_RPM = 400.0;
+constexpr double MAX_TURN_RPM = 200.0;
 
 // valor variable: geometria del tren de traccion, medir en el robot (diametro y distancia entre ruedas en pulgadas, relacion de engranes)
 constexpr double DRIVE_WHEEL_DIAMETER = 3.25;

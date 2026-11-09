@@ -18,6 +18,7 @@ void initialize() {
     rightMotors.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
     garraMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
     garraMotor.tare_position();
+    upMotors.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 }
 
 void disabled() {
@@ -40,13 +41,6 @@ void opcontrol() {
     constexpr int DEADBAND = 10;
     // valor variable: VELOCIDAD de la garra
     constexpr double GarraRPM = 100.0;
-    // valor variable: GRADOS que gira el motor.   
-    constexpr double RelacionGarra = 3.0;
-    // valor variable: La direccion del giro
-    constexpr double SentidoGarra = 1.0;
-    // valor variable: Recorrido de la garra
-    constexpr double GarraGradosArriba = 90.0;
-    constexpr double GarraGradosAbajo = 350.0;
     // valor variable: VELOCIDAD de la subida
     constexpr double SubidaRPM = 200.0;
     // valor variable: VELOCIDAD del intake
@@ -63,10 +57,7 @@ void opcontrol() {
     int PosicionGarra = 0;
     bool anteriorDerecha = false;
     bool anteriorIzquierda = false;
-    bool subidaEncendida = false;
     bool intakeEncendido = false;
-    bool previous_R1 = false;
-    bool previous_L1 = false;
     bool previous_X = false;
 
     while (true) {
@@ -89,35 +80,30 @@ void opcontrol() {
         previous_DOWN = current_DOWN;
 
         // controlador de la garra
-        bool GarraMas = master.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT);
-        bool GarraMenos = master.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT);
-        if (GarraMas && !anteriorDerecha && !GarraMenos && PosicionGarra > 0){
-            PosicionGarra--;
+        bool current_R2 = master.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
+        bool current_L2 = master.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+        if (current_R2 && !current_L2){
+            garraMotor.move_velocity(GarraRPM);
         }
-        if (GarraMenos && !anteriorIzquierda && !GarraMas && PosicionGarra < 2){
-            PosicionGarra++;
+        else if (current_L2 && !current_R2){
+            garraMotor.move_velocity(-GarraRPM);
         }
-        double garra_objetivo = PosicionGarra == 0 ? GarraGradosArriba * RelacionGarra * SentidoGarra : (PosicionGarra == 2 ? -GarraGradosAbajo * RelacionGarra * SentidoGarra : 0.0);
-        if ((GarraMas && !anteriorDerecha && !GarraMenos && PosicionGarra < 2) || (GarraMenos && !anteriorIzquierda && !GarraMas && PosicionGarra > 0)){
-            garraMotor.move_absolute(garra_objetivo, GarraRPM);
+        else {
+            garraMotor.move_velocity(0);
         }
-        anteriorDerecha = GarraMas;
-        anteriorIzquierda = GarraMenos;
 
         // subida
         bool current_R1 = master.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
-        if (current_R1 && !previous_R1){
-            subidaEncendida = !subidaEncendida;
-                upMotors.move_velocity(subidaEncendida ? SubidaRPM : 0);
-            }
-            previous_R1 = current_R1;
-
-     bool current_L1 = master.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
-        if (current_L1 && !previous_L1){
-            subidaEncendida = !subidaEncendida;
-                upMotors.move_velocity(subidaEncendida ? -SubidaRPM : 0);
-            }
-            previous_L1 = current_L1;
+        bool current_L1 = master.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
+        if (current_R1 && !current_L1){
+            upMotors.move_velocity(SubidaRPM);
+        }
+        else if (current_L1 && !current_R1){
+            upMotors.move_velocity(-SubidaRPM);
+        }
+        else {
+            upMotors.move_velocity(0);
+        }
 
         // intake
         bool current_X = master.get_digital(pros::E_CONTROLLER_DIGITAL_X);
@@ -136,7 +122,7 @@ void opcontrol() {
         }
         previous_A = current_A;
 
-        int forward_raw = -master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+        int forward_raw = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
         int turn_raw = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 
         if (std::abs(forward_raw) < DEADBAND) { 

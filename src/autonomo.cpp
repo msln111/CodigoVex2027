@@ -133,10 +133,7 @@ void moverAPunto(double objetivoX, double objetivoY, double objetivoTheta){
 
 void autonomous(){
     reset_odometry(0.0, 0.0, 0.0);
-    pros::delay(200);
-    avanzar(24.0);                  // recto 24 in con el rumbo actual
-    girarAngulo(90.0);              // gira a la derecha hasta quedar a 90 grados
-    avanzar(24.0, 90.0);            // 24 in sobre el rumbo de 90 grados
-    pros::delay(200);
-    stop_drive();
+   avanzar (-63.0, 0);
+   pros::delay(200);
+   stop_drive();
 }
