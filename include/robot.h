@@ -93,6 +93,6 @@ void tareaPantalla(void *param);
 // funciones autonomas
 void girarAngulo(double objetivoTheta);
 void moverAPunto(double objetivoX, double objetivoY, double objetivoTheta);
-void avanzar(double distancia);
+void avanzar(double distancia, double rumbo);
 
 #endif

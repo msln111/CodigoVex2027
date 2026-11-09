@@ -50,7 +50,7 @@ void opcontrol() {
     // valor variable: VELOCIDAD de la subida
     constexpr double SubidaRPM = 100.0;
     // valor variable: VELOCIDAD del intake
-    constexpr double IntakeRPM = 100.0;
+    constexpr double IntakeRPM = 200.0;
     // valor variable: estas sensibilidades cambian la respuesta de los joysticks
     constexpr double FORWARD_SENSITIVITY = 2.0;
     constexpr double TURN_SENSITIVITY = 1.0;

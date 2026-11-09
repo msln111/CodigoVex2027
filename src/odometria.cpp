@@ -33,8 +33,13 @@ constexpr double INCHES_PER_CENTIDEGREE = (M_PI * TRACKING_WHEEL_DIAMETER) / CEN
 
 // valor variable: encoder de avance
 constexpr pros::Rotation &ENCODER_FORWARD = encodervertical;
+constexpr pros::Rotation &ENCODER_SIDE = encoderhorizontal;
 // valor variable: sentido del encoder
 constexpr double FORWARD_SIGN = 1.0;
+constexpr double SIDE_SIGN = 1.0;
+// valor variables: offset de los encoders
+constexpr double SIDE_OFFSET_IN = 0.0;
+constexpr double FORWARD_OFFSET_IN = 0.0;
 // valor variable: sentido del imu
 constexpr double IMU_SIGN = 1.0;
 // valor variable: sentido de los motores en auton
@@ -42,6 +47,7 @@ constexpr double DRIVE_POLARITY = -1.0;
 
 // lecturas anteriores del encoder, rumbo y offset
 static double previousForwardRaw = 0.0;
+static double previousSideRaw = 0.0;
 static double previousThetaDeg = 0.0;
 static double headingOffsetDeg = 0.0;
 
@@ -80,6 +86,7 @@ void reset_odometry(double x, double y, double theta_degrees){
     globalV = 0.0;
     globalOmega = 0.0;
     previousForwardRaw = ENCODER_FORWARD.get_position();
+    previousSideRaw = ENCODER_SIDE.get_position();
     odometry_mutex.give();
 }
 
@@ -88,8 +95,8 @@ void set_tank_speed(double left_speed, double right_speed){
 
     if (largest_requested_speed > MAX_MOTOR_RPM){
         double scale = MAX_MOTOR_RPM / largest_requested_speed;
-        left_speed *+ scale;
-        right_speed *+ scale;
+        left_speed *= scale;
+        right_speed *= scale;
     }
     left_speed = clamp_speed(left_speed, -MAX_MOTOR_RPM, MAX_MOTOR_RPM);
     right_speed = clamp_speed(right_speed, -MAX_MOTOR_RPM, MAX_MOTOR_RPM);
@@ -115,15 +122,22 @@ void tareaOdometria(void *param){
         odometry_mutex.take();
         double thetaDeg = read_theta_deg();
         double forwardRaw = ENCODER_FORWARD.get_position();
+        double sideRaw = ENCODER_SIDE.get_position();
 
-        if (std::isfinite(thetaDeg) && forwardRaw != PROS_ERR){
+        if (std::isfinite(thetaDeg) && forwardRaw != PROS_ERR && sideRaw != PROS_ERR){
             double dThetaDeg = thetaDeg - previousThetaDeg;
-            double dForward = FORWARD_SIGN * (forwardRaw - previousForwardRaw) * INCHES_PER_CENTIDEGREE;
+            double dThetaRad = dThetaDeg * M_PI / 180.0;
+            // medicion
+            double dForwardMeasured = FORWARD_SIGN * (forwardRaw - previousForwardRaw) * INCHES_PER_CENTIDEGREE;
+            double dSideMeasured = SIDE_SIGN * (sideRaw - previousSideRaw) * INCHES_PER_CENTIDEGREE;
+            double dForward = dForwardMeasured + (FORWARD_OFFSET_IN * dThetaRad);
+            double dSide = dSideMeasured - (SIDE_OFFSET_IN * dThetaRad);
             double midRad = (previousThetaDeg + (0.5 * dThetaDeg)) * M_PI / 180.0;
-            globalX += dForward * std::sin(midRad);
-            globalY += dForward * std::cos(midRad);
+            globalX += (dForward * std::sin(midRad)) + (dSide * std::cos(midRad));
+            globalY += (dForward * std::cos(midRad)) - (dSide * std::sin(midRad));
             globalTheta = normalize_angle_degrees(thetaDeg);
             previousForwardRaw = forwardRaw;
+            previousSideRaw = sideRaw;
             previousThetaDeg = thetaDeg;
         }
 
